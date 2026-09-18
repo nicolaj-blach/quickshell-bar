@@ -1,0 +1,11 @@
+module widgets
+
+singleton NiriIpc 1.0 NiriIpc.qml
+singleton Icons 1.0 Icons.qml
+
+Battery 1.0 Battery.qml
+Bluetooth 1.0 Bluetooth.qml
+Clock 1.0 Clock.qml
+Volume 1.0 Volume.qml
+Wifi 1.0 Wifi.qml
+Workspaces 1.0 Workspaces.qml
