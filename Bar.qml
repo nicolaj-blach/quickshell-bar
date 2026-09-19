@@ -7,7 +7,6 @@ import "widgets"
 PanelWindow {
     id: bar
 
-    required property var screen
     required property var colors
 
     anchors {
