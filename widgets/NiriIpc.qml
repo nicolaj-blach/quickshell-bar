@@ -252,6 +252,12 @@ Singleton {
         createWsProc.running = true
     }
 
+    // Toggle the overview
+    function toggleOverview() {
+        if (socketPath === "") return
+        toggleOverviewProc.running = true
+    }
+
     Process {
         id: focusProc
         property int wsIdx: 0
@@ -262,6 +268,12 @@ Singleton {
     Process {
         id: createWsProc
         command: ["niri", "msg", "action", "focus-workspace-down"]
+        running: false
+    }
+
+    Process {
+        id: toggleOverviewProc
+        command: ["niri", "msg", "action", "toggle-overview"]
         running: false
     }
 

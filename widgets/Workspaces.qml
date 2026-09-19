@@ -26,23 +26,30 @@ Row {
         return filtered
     }
 
-    // Monitor key indicator [1], [2], etc.
+    // Monitor key indicator [1], [2], etc. or [X] for single monitor
+    // Clicking toggles the overview
     Rectangle {
         id: monitorKey
-        visible: NiriIpc.hasMultipleMonitors()
         
         width: monitorLabel.width + 8
         height: 24
-        color: "transparent"
+        color: monitorMouseArea.containsMouse ? Qt.rgba(colors.barBorder.r, colors.barBorder.g, colors.barBorder.b, 0.5) : "transparent"
 
         Text {
             id: monitorLabel
             anchors.centerIn: parent
-            text: "[" + NiriIpc.getMonitorNumber(workspaces.outputName) + "]"
+            text: NiriIpc.hasMultipleMonitors() ? "[" + NiriIpc.getMonitorNumber(workspaces.outputName) + "]" : "[X]"
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 10
             font.bold: true
             color: NiriIpc.focusedOutput === workspaces.outputName ? colors.barRed : colors.barMuted
+        }
+
+        MouseArea {
+            id: monitorMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: NiriIpc.toggleOverview()
         }
     }
 
