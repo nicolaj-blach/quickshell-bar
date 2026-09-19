@@ -17,7 +17,8 @@ PanelWindow {
     }
 
     exclusionMode: ExclusionMode.Normal
-    height: 24
+    exclusiveZone: 30
+    height: 30
 
     color: "transparent"
 
