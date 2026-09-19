@@ -53,7 +53,6 @@ ShellRoot {
         model: Quickshell.screens
 
         Bar {
-            screen: modelData
             colors: root
         }
     }

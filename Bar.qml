@@ -7,7 +7,10 @@ import "widgets"
 PanelWindow {
     id: bar
 
+    required property var modelData
     required property var colors
+
+    screen: modelData
 
     anchors {
         top: true
@@ -17,7 +20,7 @@ PanelWindow {
 
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 30
-    height: 30
+    implicitHeight: 30
 
     color: "transparent"
 
