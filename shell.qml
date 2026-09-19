@@ -5,10 +5,8 @@ import QtQuick
 ShellRoot {
     id: root
 
-    // Load colors from tinty-generated file
     property string colorsPath: StandardPaths.homeLocation + "/.config/quickshell/colors.json"
 
-    // Color properties with fallback defaults (base16-onedark)
     property color barBg: "#282c34"
     property color barFg: "#abb2bf"
     property color barBorder: "#3e4451"
@@ -20,7 +18,6 @@ ShellRoot {
     property color barCyan: "#56b6c2"
     property color barOrange: "#d19a66"
 
-    // File watcher for colors
     FileView {
         id: colorsFile
         path: Qt.resolvedUrl(root.colorsPath)
@@ -48,12 +45,8 @@ ShellRoot {
 
     Component.onCompleted: loadColors()
 
-    // Create a bar for each screen
     Variants {
         model: Quickshell.screens
-
-        Bar {
-            colors: root
-        }
+        Bar { colors: root }
     }
 }

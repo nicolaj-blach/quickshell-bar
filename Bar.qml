@@ -21,7 +21,6 @@ PanelWindow {
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 30
     implicitHeight: 30
-
     color: "transparent"
 
     Rectangle {
@@ -42,7 +41,6 @@ PanelWindow {
             anchors.rightMargin: 12
             spacing: 0
 
-            // Left: Workspaces
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -55,7 +53,6 @@ PanelWindow {
                 }
             }
 
-            // Center: Clock
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -66,7 +63,6 @@ PanelWindow {
                 }
             }
 
-            // Right: System tray widgets
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -76,30 +72,12 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
 
-                    Battery {
-                        colors: bar.colors
-                    }
-
-                    Volume {
-                        colors: bar.colors
-                    }
-
-                    Bluetooth {
-                        colors: bar.colors
-                    }
-
-                    Wifi {
-                        colors: bar.colors
-                    }
+                    Battery { colors: bar.colors }
+                    Volume { colors: bar.colors }
+                    Bluetooth { colors: bar.colors }
+                    Wifi { colors: bar.colors }
                 }
             }
         }
     }
-
-    // Shared font for all text in the bar
-    property font barFont: Qt.font({
-        family: "JetBrainsMono Nerd Font",
-        pixelSize: 13,
-        bold: true
-    })
 }

@@ -46,6 +46,8 @@ Singleton {
     function handleEvent(event) {
         if (event.WorkspacesChanged) {
             updateWorkspaces(event.WorkspacesChanged.workspaces)
+            // Refresh outputs when workspaces change (may indicate monitor changes)
+            refreshOutputs()
         } else if (event.WorkspaceActivated) {
             var wsEvent = event.WorkspaceActivated
             markWorkspaceActive(wsEvent.id, wsEvent.focused)
@@ -67,6 +69,15 @@ Singleton {
                     if (ws) focusedOutput = ws.output
                 }
             }
+        } else if (event.ConfigLoaded) {
+            // Config reload often happens when monitors change
+            refreshOutputs()
+        }
+    }
+
+    function refreshOutputs() {
+        if (socketPath !== "") {
+            refreshOutputsProc.running = true
         }
     }
 
@@ -316,24 +327,48 @@ Singleton {
         running: false
         stdout: SplitParser {
             onRead: function(data) {
-                try {
-                    var outputData = JSON.parse(data)
-                    // Sort outputs by x position (left to right)
-                    var outputList = []
-                    for (var name in outputData) {
-                        outputList.push({
-                            name: name,
-                            x: outputData[name].logical.x
-                        })
-                    }
-                    outputList.sort(function(a, b) { return a.x - b.x })
-                    niri.outputs = outputList.map(function(o) { return o.name })
-                    niri.updateTrigger++
-                } catch (e) {
-                    console.error("Failed to parse outputs:", e)
-                }
+                niri.parseAndUpdateOutputs(data)
             }
         }
+    }
+
+    Process {
+        id: refreshOutputsProc
+        command: ["niri", "msg", "-j", "outputs"]
+        running: false
+        stdout: SplitParser {
+            onRead: function(data) {
+                niri.parseAndUpdateOutputs(data)
+            }
+        }
+    }
+
+    function parseAndUpdateOutputs(data) {
+        try {
+            var outputData = JSON.parse(data)
+            // Sort outputs by x position (left to right)
+            var outputList = []
+            for (var name in outputData) {
+                outputList.push({
+                    name: name,
+                    x: outputData[name].logical.x
+                })
+            }
+            outputList.sort(function(a, b) { return a.x - b.x })
+            niri.outputs = outputList.map(function(o) { return o.name })
+            niri.updateTrigger++
+        } catch (e) {
+            console.error("Failed to parse outputs:", e)
+        }
+    }
+
+    // Timer to periodically refresh outputs (since niri doesn't have output change events)
+    Timer {
+        id: outputRefreshTimer
+        interval: 2000  // Check every 2 seconds
+        running: niri.socketPath !== ""
+        repeat: true
+        onTriggered: niri.refreshOutputs()
     }
 
     Component.onCompleted: {
