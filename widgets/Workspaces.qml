@@ -9,33 +9,46 @@ Row {
 
     spacing: 0
 
-    // Re-evaluate when workspaces change
-    property int wsCount: NiriIpc.workspaces.length
+    // Trigger re-evaluation when NiriIpc updates
+    property int updateTrigger: NiriIpc.updateTrigger
 
-    // Get workspaces for this output, or all if single monitor
+    // Get workspaces for this output (only active or occupied)
     function getWorkspaceList() {
-        var forOutput = NiriIpc.getWorkspacesForOutput(outputName)
-        if (forOutput.length > 0) return forOutput
-        
-        // Fallback: if no match, maybe output name differs - show all workspaces
-        if (NiriIpc.workspaces.length > 0) {
-            // Check if this might be the primary output
-            var allOutputs = []
-            for (var i = 0; i < NiriIpc.workspaces.length; i++) {
-                var out = NiriIpc.workspaces[i].output
-                if (allOutputs.indexOf(out) === -1) allOutputs.push(out)
-            }
-            // If single output in niri, show all
-            if (allOutputs.length === 1) {
-                return NiriIpc.getWorkspacesForOutput(allOutputs[0])
+        var all = NiriIpc.getWorkspacesForOutput(outputName)
+        var filtered = []
+        for (var i = 0; i < all.length; i++) {
+            var ws = all[i]
+            // Show if active, focused, or has windows
+            if (ws.isActive || ws.isFocused || NiriIpc.isOccupied(ws.id)) {
+                filtered.push(ws)
             }
         }
-        return []
+        return filtered
+    }
+
+    // Monitor key indicator [1], [2], etc.
+    Rectangle {
+        id: monitorKey
+        visible: NiriIpc.hasMultipleMonitors()
+        
+        width: monitorLabel.width + 8
+        height: 24
+        color: "transparent"
+
+        Text {
+            id: monitorLabel
+            anchors.centerIn: parent
+            text: "[" + NiriIpc.getMonitorNumber(workspaces.outputName) + "]"
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 10
+            font.bold: true
+            color: NiriIpc.focusedOutput === workspaces.outputName ? colors.barRed : colors.barMuted
+        }
     }
 
     Repeater {
-        // Depend on wsCount to trigger re-evaluation
-        model: workspaces.wsCount > 0 ? workspaces.getWorkspaceList() : []
+        // Depend on updateTrigger to refresh
+        model: workspaces.updateTrigger >= 0 ? workspaces.getWorkspaceList() : []
 
         Rectangle {
             id: wsButton
@@ -53,7 +66,7 @@ Row {
             Text {
                 id: wsLabel
                 anchors.centerIn: parent
-                text: modelData.name !== "" ? modelData.name : modelData.idx.toString()
+                text: modelData.idx.toString()
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 10
                 font.bold: true
@@ -81,8 +94,34 @@ Row {
                 id: mouseArea
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: NiriIpc.focusWorkspace(modelData.id)
+                onClicked: NiriIpc.focusWorkspaceIdx(modelData.idx)
             }
+        }
+    }
+
+    // Add workspace button (+)
+    Rectangle {
+        id: addButton
+
+        width: addLabel.width + 12
+        height: 24
+        color: addMouseArea.containsMouse ? Qt.rgba(colors.barBorder.r, colors.barBorder.g, colors.barBorder.b, 0.5) : "transparent"
+
+        Text {
+            id: addLabel
+            anchors.centerIn: parent
+            text: "+"
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 10
+            font.bold: true
+            color: colors.barMuted
+        }
+
+        MouseArea {
+            id: addMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: NiriIpc.createWorkspace()
         }
     }
 }

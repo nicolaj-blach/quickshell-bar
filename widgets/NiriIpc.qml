@@ -8,19 +8,25 @@ Singleton {
     id: niri
 
     // Workspace state
-    property var workspaces: []  // Array of {id, output, name, isActive, isFocused}
+    property var workspaces: []  // Array of {id, idx, output, name, isActive, isFocused}
     property int focusedWorkspaceId: -1
     property string focusedOutput: ""
 
     // Window state for occupied detection
-    property var windows: []  // Array of {id, workspaceId, ...}
+    property var windows: []  // Array of {id, workspace_id, ...}
+
+    // Output list for monitor numbering
+    property var outputs: []  // Array of output names sorted by position
+
+    // Trigger for UI updates
+    property int updateTrigger: 0
 
     readonly property string socketPath: Quickshell.env("NIRI_SOCKET") ?? ""
 
     // Event stream process using niri msg event-stream
     Process {
         id: eventStreamProc
-        command: ["niri", "msg", "event-stream"]
+        command: ["niri", "msg", "-j", "event-stream"]
         running: niri.socketPath !== ""
 
         stdout: SplitParser {
@@ -45,8 +51,10 @@ Singleton {
             markWorkspaceActive(wsEvent.id, wsEvent.focused)
         } else if (event.WorkspaceFocused) {
             focusedWorkspaceId = event.WorkspaceFocused.id
+            updateTrigger++
         } else if (event.WindowsChanged) {
             windows = event.WindowsChanged.windows || []
+            updateTrigger++
         } else if (event.WindowOpenedOrChanged) {
             updateWindow(event.WindowOpenedOrChanged.window)
         } else if (event.WindowClosed) {
@@ -76,6 +84,35 @@ Singleton {
         return null
     }
 
+    // Find workspace by output and index
+    function findWorkspaceByIdx(output, idx) {
+        for (var i = 0; i < workspaces.length; i++) {
+            if (workspaces[i].output === output && workspaces[i].idx === idx) {
+                return workspaces[i]
+            }
+        }
+        return null
+    }
+
+    // Check if a workspace index is active on a given output
+    function isWorkspaceActive(output, idx) {
+        var ws = findWorkspaceByIdx(output, idx)
+        return ws ? ws.isActive : false
+    }
+
+    // Check if a workspace index is focused (active on focused output)
+    function isWorkspaceFocused(output, idx) {
+        var ws = findWorkspaceByIdx(output, idx)
+        return ws ? ws.isFocused : false
+    }
+
+    // Check if a workspace index has windows
+    function isWorkspaceOccupied(output, idx) {
+        var ws = findWorkspaceByIdx(output, idx)
+        if (!ws) return false
+        return isOccupied(ws.id)
+    }
+
     function updateWorkspaces(wsData) {
         var newWorkspaces = []
         for (var i = 0; i < wsData.length; i++) {
@@ -90,6 +127,7 @@ Singleton {
             })
         }
         workspaces = newWorkspaces
+        updateTrigger++
 
         // Find focused workspace
         for (var j = 0; j < workspaces.length; j++) {
@@ -131,6 +169,7 @@ Singleton {
             newWorkspaces.push(newWs)
         }
         workspaces = newWorkspaces
+        updateTrigger++
 
         if (focused) {
             focusedWorkspaceId = id
@@ -153,6 +192,7 @@ Singleton {
             newWindows.push(win)
         }
         windows = newWindows
+        updateTrigger++
     }
 
     function removeWindow(id) {
@@ -163,6 +203,7 @@ Singleton {
             }
         }
         windows = newWindows
+        updateTrigger++
     }
 
     // Check if workspace has windows
@@ -185,17 +226,42 @@ Singleton {
         return result
     }
 
-    // Focus a workspace by ID
-    function focusWorkspace(id) {
+    // Get monitor number (1-based) for an output name
+    function getMonitorNumber(output) {
+        for (var i = 0; i < outputs.length; i++) {
+            if (outputs[i] === output) return i + 1
+        }
+        return 1
+    }
+
+    // Check if there are multiple monitors
+    function hasMultipleMonitors() {
+        return outputs.length > 1
+    }
+
+    // Focus a workspace by index on the current output
+    function focusWorkspaceIdx(idx) {
         if (socketPath === "") return
-        focusProc.wsId = id
+        focusProc.wsIdx = idx
         focusProc.running = true
+    }
+    
+    // Create a new workspace (focus-workspace-down from the last one)
+    function createWorkspace() {
+        if (socketPath === "") return
+        createWsProc.running = true
     }
 
     Process {
         id: focusProc
-        property int wsId: 0
-        command: ["niri", "msg", "action", "focus-workspace", wsId.toString()]
+        property int wsIdx: 0
+        command: ["niri", "msg", "action", "focus-workspace", wsIdx.toString()]
+        running: false
+    }
+
+    Process {
+        id: createWsProc
+        command: ["niri", "msg", "action", "focus-workspace-down"]
         running: false
     }
 
@@ -224,8 +290,35 @@ Singleton {
             onRead: function(data) {
                 try {
                     niri.windows = JSON.parse(data) || []
+                    niri.updateTrigger++
                 } catch (e) {
                     console.error("Failed to parse initial windows:", e)
+                }
+            }
+        }
+    }
+
+    Process {
+        id: initOutputsProc
+        command: ["niri", "msg", "-j", "outputs"]
+        running: false
+        stdout: SplitParser {
+            onRead: function(data) {
+                try {
+                    var outputData = JSON.parse(data)
+                    // Sort outputs by x position (left to right)
+                    var outputList = []
+                    for (var name in outputData) {
+                        outputList.push({
+                            name: name,
+                            x: outputData[name].logical.x
+                        })
+                    }
+                    outputList.sort(function(a, b) { return a.x - b.x })
+                    niri.outputs = outputList.map(function(o) { return o.name })
+                    niri.updateTrigger++
+                } catch (e) {
+                    console.error("Failed to parse outputs:", e)
                 }
             }
         }
@@ -238,5 +331,6 @@ Singleton {
         }
         initWorkspacesProc.running = true
         initWindowsProc.running = true
+        initOutputsProc.running = true
     }
 }
