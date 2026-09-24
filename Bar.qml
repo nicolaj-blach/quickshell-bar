@@ -9,6 +9,7 @@ PanelWindow {
 
     required property var modelData
     required property var colors
+    required property var shell
 
     screen: modelData
 
@@ -50,6 +51,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     colors: bar.colors
                     outputName: bar.screen.name
+                    systemMenuCmd: bar.shell.systemMenuCmd
                 }
             }
 

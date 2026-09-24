@@ -5,7 +5,7 @@ import QtQuick
 ShellRoot {
     id: root
 
-    property string colorsPath: StandardPaths.homeLocation + "/.config/quickshell/colors.json"
+    property string colorsPath: Quickshell.env("HOME") + "/.config/quickshell/colors.json"
 
     property color barBg: "#282c34"
     property color barFg: "#abb2bf"
@@ -20,14 +20,18 @@ ShellRoot {
 
     FileView {
         id: colorsFile
-        path: Qt.resolvedUrl(root.colorsPath)
-        onTextChanged: loadColors()
+        path: root.colorsPath
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.loadColors()
     }
 
     function loadColors() {
-        if (colorsFile.text === "") return
+        const text = colorsFile.text()
+        if (!text) return
         try {
-            const colors = JSON.parse(colorsFile.text)
+            const colors = JSON.parse(text)
             if (colors.bar_bg) root.barBg = colors.bar_bg
             if (colors.bar_fg) root.barFg = colors.bar_fg
             if (colors.bar_border) root.barBorder = colors.bar_border
@@ -43,10 +47,32 @@ ShellRoot {
         }
     }
 
-    Component.onCompleted: loadColors()
+    property string configPath: Quickshell.env("HOME") + "/.config/quickshell/config.json"
+    property var systemMenuCmd: []
+
+    FileView {
+        id: configFile
+        path: root.configPath
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.loadConfig()
+    }
+
+    function loadConfig() {
+        const text = configFile.text()
+        if (!text) return
+        try {
+            const config = JSON.parse(text)
+            root.systemMenuCmd = Array.isArray(config.system_menu_cmd) ? config.system_menu_cmd : []
+        } catch (e) {
+            console.error("Failed to parse config.json:", e)
+        }
+    }
+
 
     Variants {
         model: Quickshell.screens
-        Bar { colors: root }
+        Bar { colors: root; shell: root }
     }
 }

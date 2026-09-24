@@ -1,3 +1,4 @@
+import Quickshell
 import QtQuick
 import QtQuick.Layouts
 
@@ -6,6 +7,7 @@ Row {
 
     required property var colors
     required property string outputName
+    property var systemMenuCmd: []
 
     spacing: 0
 
@@ -27,7 +29,7 @@ Row {
     }
 
     // Monitor key indicator [1], [2], etc. or [X] for single monitor
-    // Clicking toggles the overview
+    // Left click runs system_menu_cmd from config.json, right click toggles the overview
     Rectangle {
         id: monitorKey
         
@@ -49,7 +51,14 @@ Row {
             id: monitorMouseArea
             anchors.fill: parent
             hoverEnabled: true
-            onClicked: NiriIpc.toggleOverview()
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: mouse => {
+                if (mouse.button === Qt.RightButton) {
+                    NiriIpc.toggleOverview()
+                } else if (workspaces.systemMenuCmd.length > 0) {
+                    Quickshell.execDetached(workspaces.systemMenuCmd)
+                }
+            }
         }
     }
 
