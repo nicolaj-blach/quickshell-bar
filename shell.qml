@@ -70,7 +70,6 @@ ShellRoot {
         }
     }
 
-
     Variants {
         model: Quickshell.screens
         Bar { colors: root; shell: root }
