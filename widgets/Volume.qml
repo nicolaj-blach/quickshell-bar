@@ -6,6 +6,7 @@ Rectangle {
     id: volume
 
     required property var colors
+    property var clickCmd: []
 
     width: volumeRow.width + 8
     height: 24
@@ -74,12 +75,6 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: launchAudio.running = true
-    }
-
-    Process {
-        id: launchAudio
-        command: ["sh", "-c", "$HOME/.local/bin/tui-audio"]
-        running: false
+        onClicked: if (volume.clickCmd.length > 0) Quickshell.execDetached(volume.clickCmd)
     }
 }

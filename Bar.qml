@@ -75,9 +75,9 @@ PanelWindow {
                     spacing: 0
 
                     Battery { colors: bar.colors }
-                    Volume { colors: bar.colors }
-                    Bluetooth { colors: bar.colors }
-                    Wifi { colors: bar.colors }
+                    Volume { colors: bar.colors; clickCmd: bar.shell.audioCmd }
+                    Bluetooth { colors: bar.colors; clickCmd: bar.shell.bluetoothCmd }
+                    Wifi { colors: bar.colors; clickCmd: bar.shell.wifiCmd }
                 }
             }
         }

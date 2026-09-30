@@ -6,17 +6,18 @@ Rectangle {
     id: wifi
 
     required property var colors
+    property var clickCmd: []
 
     width: wifiRow.width + 8
     height: 24
     color: mouseArea.containsMouse ? Qt.rgba(colors.barBorder.r, colors.barBorder.g, colors.barBorder.b, 0.5) : "transparent"
+    visible: !isWired
 
     property bool isWired: false
     property int strength: 0
     property string ssid: ""
 
     function wifiIcon() {
-        if (isWired) return Icons.ethernet
         if (strength >= 75) return Icons.wifi4
         if (strength >= 50) return Icons.wifi3
         if (strength >= 25) return Icons.wifi2
@@ -115,7 +116,7 @@ Rectangle {
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 10
             font.bold: true
-            visible: !isWired && ssid !== ""
+            visible: ssid !== ""
             leftPadding: 2
         }
     }
@@ -124,14 +125,6 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: {
-            launchWifi.running = true
-        }
-    }
-
-    Process {
-        id: launchWifi
-        command: ["sh", "-c", "$HOME/.local/bin/tui-wifi"]
-        running: false
+        onClicked: if (wifi.clickCmd.length > 0) Quickshell.execDetached(wifi.clickCmd)
     }
 }

@@ -49,6 +49,9 @@ ShellRoot {
 
     property string configPath: Quickshell.env("HOME") + "/.config/quickshell/config.json"
     property var systemMenuCmd: []
+    property var wifiCmd: []
+    property var bluetoothCmd: []
+    property var audioCmd: []
 
     FileView {
         id: configFile
@@ -65,6 +68,9 @@ ShellRoot {
         try {
             const config = JSON.parse(text)
             root.systemMenuCmd = Array.isArray(config.system_menu_cmd) ? config.system_menu_cmd : []
+            root.wifiCmd = Array.isArray(config.wifi_cmd) ? config.wifi_cmd : []
+            root.bluetoothCmd = Array.isArray(config.bluetooth_cmd) ? config.bluetooth_cmd : []
+            root.audioCmd = Array.isArray(config.audio_cmd) ? config.audio_cmd : []
         } catch (e) {
             console.error("Failed to parse config.json:", e)
         }

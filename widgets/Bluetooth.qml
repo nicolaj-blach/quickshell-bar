@@ -6,6 +6,7 @@ Rectangle {
     id: bluetooth
 
     required property var colors
+    property var clickCmd: []
 
     width: btIcon.width + 8
     height: 24
@@ -76,14 +77,6 @@ Rectangle {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: {
-            launchBluetooth.running = true
-        }
-    }
-
-    Process {
-        id: launchBluetooth
-        command: ["sh", "-c", "$HOME/.local/bin/tui-bluetooth"]
-        running: false
+        onClicked: if (bluetooth.clickCmd.length > 0) Quickshell.execDetached(bluetooth.clickCmd)
     }
 }
