@@ -76,8 +76,18 @@ ShellRoot {
         }
     }
 
+    // `quickshell ipc -p <bar path> call bar hide|unhide|toggle`
+    property bool barVisible: true
+
+    IpcHandler {
+        target: "bar"
+        function hide(): void { root.barVisible = false }
+        function unhide(): void { root.barVisible = true }
+        function toggle(): void { root.barVisible = !root.barVisible }
+    }
+
     Variants {
         model: Quickshell.screens
-        Bar { colors: root; shell: root }
+        Bar { colors: root; shell: root; visible: root.barVisible }
     }
 }
